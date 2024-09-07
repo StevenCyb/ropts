@@ -9,6 +9,9 @@ fn main() {
 
     let name_option = StringOption::new(&mut name, "Your name")
         .required()
+        .env("DEMO_NAME")
+        .short_arg('n')
+        .long_arg("name")
         .additional_eval(|s| {
             if s.len() < 3 {
                 return Err(Error::Validation(
@@ -29,6 +32,8 @@ fn main() {
         eprintln!("{}", e);
         std::process::exit(1);
     }
+
+    println!("Hello, {}!", name.unwrap());
 }
 
 // the StringOption will change
