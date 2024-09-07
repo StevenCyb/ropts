@@ -87,10 +87,7 @@ impl<'a> StringOption<'a> {
         self
     }
 
-    pub fn additional_eval(
-        mut self,
-        eval_fkt: impl Fn(&String) -> Result<(), Error> + 'static,
-    ) -> Self {
+    pub fn additional_eval(mut self, eval_fkt: impl Fn(&String) -> Result<(), Error> + 'a) -> Self {
         self.base.additional_eval = Some(Box::new(eval_fkt));
         self
     }
@@ -104,51 +101,63 @@ mod tests {
     #[test]
     fn parse_env_existing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
-        let mut env = std::collections::HashMap::new();
-        env.insert("TEST_ENV".to_string(), "test_value".to_string());
-        opt.parse_env(&env);
+        {
+            let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
+            let mut env = std::collections::HashMap::new();
+            env.insert("TEST_ENV".to_string(), "test_value".to_string());
+            opt.parse_env(&env);
+        }
         assert_eq!(value, Some("test_value".to_string()));
     }
 
     #[test]
     fn parse_env_missing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
-        let env = std::collections::HashMap::new();
-        opt.parse_env(&env);
+        {
+            let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
+            let env = std::collections::HashMap::new();
+            opt.parse_env(&env);
+        }
         assert_eq!(value, None);
     }
 
     #[test]
     fn parse_args_long_existing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").long_arg("test");
-        opt.parse_args(&["--test".to_string(), "test_value".to_string()]);
+        {
+            let mut opt = StringOption::new(&mut value, "test").long_arg("test");
+            opt.parse_args(&["--test".to_string(), "test_value".to_string()]);
+        }
         assert_eq!(value, Some("test_value".to_string()));
     }
 
     #[test]
     fn parse_args_long_missing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").long_arg("test");
-        opt.parse_args(&["--not_test".to_string(), "test_value".to_string()]);
+        {
+            let mut opt = StringOption::new(&mut value, "test").long_arg("test");
+            opt.parse_args(&["--not_test".to_string(), "test_value".to_string()]);
+        }
         assert_eq!(value, None);
     }
 
     #[test]
     fn parse_args_short_existing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").short_arg('t');
-        opt.parse_args(&["-t".to_string(), "test_value".to_string()]);
+        {
+            let mut opt = StringOption::new(&mut value, "test").short_arg('t');
+            opt.parse_args(&["-t".to_string(), "test_value".to_string()]);
+        }
         assert_eq!(value, Some("test_value".to_string()));
     }
 
     #[test]
     fn parse_args_short_missing() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").short_arg('t');
-        opt.parse_args(&["-n".to_string(), "test_value".to_string()]);
+        {
+            let mut opt = StringOption::new(&mut value, "test").short_arg('t');
+            opt.parse_args(&["-n".to_string(), "test_value".to_string()]);
+        }
         assert_eq!(value, None);
     }
 
@@ -202,26 +211,32 @@ mod tests {
     #[test]
     fn eval_not_set() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").env("key");
-        assert!(opt.eval().is_ok());
+        {
+            let mut opt = StringOption::new(&mut value, "test").env("key");
+            assert!(opt.eval().is_ok());
+        }
         assert_eq!(value, None);
     }
 
     #[test]
     fn eval_set() {
         let mut value = Some("test_value".to_string());
-        let mut opt = StringOption::new(&mut value, "test").env("key");
-        assert!(opt.eval().is_ok());
+        {
+            let mut opt = StringOption::new(&mut value, "test").env("key");
+            assert!(opt.eval().is_ok());
+        }
         assert_eq!(value, Some("test_value".to_string()));
     }
 
     #[test]
     fn eval_use_default() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test")
-            .default("default_value")
-            .env("key");
-        assert!(opt.eval().is_ok());
+        {
+            let mut opt = StringOption::new(&mut value, "test")
+                .default("default_value")
+                .env("key");
+            assert!(opt.eval().is_ok());
+        }
         assert_eq!(value, Some("default_value".to_string()));
     }
 

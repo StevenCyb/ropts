@@ -15,7 +15,7 @@ where
     required: bool,
     default: Option<T>,
     value: &'a mut Option<T>,
-    additional_eval: Option<Box<dyn Fn(&T) -> Result<(), Error>>>,
+    additional_eval: Option<Box<dyn Fn(&T) -> Result<(), Error> + 'a>>,
 }
 
 pub trait OptionBase {
@@ -288,17 +288,19 @@ mod option_base_tests {
     #[test]
     fn eval_default() {
         let mut value = None::<String>;
-        let mut opt = OptionBaseAttributes::<String> {
-            description: "my description".to_string(),
-            env_key: Some("ENV_KEY".to_string()),
-            long_arg: None,
-            short_arg: None,
-            required: false,
-            default: Some("default".to_string()),
-            value: &mut value,
-            additional_eval: None,
-        };
-        assert!(opt.eval().is_ok());
+        {
+            let mut opt = OptionBaseAttributes::<String> {
+                description: "my description".to_string(),
+                env_key: Some("ENV_KEY".to_string()),
+                long_arg: None,
+                short_arg: None,
+                required: false,
+                default: Some("default".to_string()),
+                value: &mut value,
+                additional_eval: None,
+            };
+            assert!(opt.eval().is_ok());
+        }
         assert_eq!(value, Some("default".to_string()));
     }
 

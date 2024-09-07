@@ -2,14 +2,14 @@ use crate::error::Error;
 use crate::options::OptionBase;
 use std::collections::HashMap;
 
-pub struct Compose {
-    options: Vec<Box<dyn OptionBase>>,
+pub struct Compose<'a> {
+    options: Vec<Box<dyn OptionBase + 'a>>,
     envs: HashMap<String, String>,
     args: Vec<String>,
-    print_fn: Option<Box<dyn Fn(String)>>,
+    print_fn: Option<Box<dyn Fn(String) + 'a>>,
 }
 
-impl Compose {
+impl<'a> Compose<'a> {
     pub fn new() -> Self {
         Compose {
             options: Vec::new(),
@@ -19,7 +19,7 @@ impl Compose {
         }
     }
 
-    pub fn add<T: OptionBase + 'static>(mut self, option: T) -> Self {
+    pub fn add<T: OptionBase + 'a>(mut self, option: T) -> Self {
         self.options.push(Box::new(option));
         self
     }
@@ -77,7 +77,7 @@ impl Compose {
         Ok(())
     }
 
-    pub fn help(mut self, print_fn: impl Fn(String) + 'static) -> Self {
+    pub fn help(mut self, print_fn: impl Fn(String) + 'a) -> Self {
         self.print_fn = Some(Box::new(print_fn));
         self
     }
