@@ -123,7 +123,7 @@ where
 }
 
 #[cfg(test)]
-mod option_base_tests {
+mod tests {
     use super::*;
 
     #[test]

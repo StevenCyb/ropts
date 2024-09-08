@@ -84,7 +84,7 @@ impl<'a> Compose<'a> {
 }
 
 #[cfg(test)]
-mod compose_tests {
+mod tests {
     use crate::error::Error;
     use crate::options::OptionBase;
     use std::collections::HashMap;
