@@ -1,7 +1,15 @@
 [package]
 name = "ropts"
-version = "0.1.0"
-authors = ["Your Name <your.email@example.com>"]
+description = "A simple command line argument parser for Rust"
+homepage = "https://github.com/StevenCyb/ropts"
+repository = "https://github.com/StevenCyb/ropts"
+readme = "README.md"
+license = "MIT"
+version = "0.0.1"
 edition = "2021"
+exclude = [
+    ".github/*",
+    ".vscode/*",
+]
 
 [dependencies]

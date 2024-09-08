@@ -1,14 +1,19 @@
+// Import the necessary modules
 use ropts::{compose::Compose, error::Error, options::ValueOption, options::ValuesOption};
 use std::env;
 
 fn main() {
+    // Collect the command line arguments and environment variables
     let args = env::args().collect::<Vec<String>>();
     let envs: Vec<(String, String)> = env::vars().collect();
 
+    // Define the variables to store the parsed values
     let mut name = None::<String>;
     let mut age = None::<u8>;
     let mut employed: Option<bool> = Option::<bool>::None;
     let mut skills: Option<Vec<String>> = None;
+
+    // Define the options
     let name_option = ValueOption::new(&mut name, "Your name")
         .required()
         .env("DEMO_NAME")
@@ -44,6 +49,7 @@ fn main() {
         .short_arg('s')
         .long_arg("skills");
 
+    // Compose the options and parse the command line arguments
     let result = Compose::new()
         .args(args.iter().skip(1).cloned())
         .envs(envs.into_iter())
@@ -54,11 +60,13 @@ fn main() {
         .add(skills_option)
         .parse();
 
+    // Error handling
     if let Err(e) = result {
         eprintln!("{}", e);
         std::process::exit(1);
     }
 
+    // Use the parsed values
     println!("Hello, {}!", name.unwrap());
     println!("You are {} years old", age.unwrap());
     println!("Are you employed? {}", employed.unwrap());
