@@ -1,17 +1,49 @@
 use crate::error::Error;
 use crate::options::{OptionBase, OptionBaseAttributes};
 use std::collections::HashMap;
+use std::fmt;
+use std::str::FromStr;
 
-pub struct StringOption<'a> {
-    base: OptionBaseAttributes<'a, String>,
+pub trait AllowedTypes: fmt::Display + Clone + FromStr {}
+impl AllowedTypes for String {}
+impl AllowedTypes for i8 {}
+impl AllowedTypes for i16 {}
+impl AllowedTypes for i32 {}
+impl AllowedTypes for i64 {}
+impl AllowedTypes for i128 {}
+impl AllowedTypes for u8 {}
+impl AllowedTypes for u16 {}
+impl AllowedTypes for u32 {}
+impl AllowedTypes for u64 {}
+impl AllowedTypes for u128 {}
+impl AllowedTypes for f32 {}
+impl AllowedTypes for f64 {}
+impl AllowedTypes for char {}
+
+fn convert<T: AllowedTypes>(value: &str) -> Result<T, Error> {
+    value.parse().map_err(|_| {
+        Error::Parsing(format!(
+            "Error converting from {:?} to {}",
+            value,
+            std::any::type_name::<T>()
+        ))
+    })
 }
 
-// Implement OptionBase for StringOption
-impl OptionBase for StringOption<'_> {
+pub fn do_stuff<T: AllowedTypes>(list: &[T]) {
+    // Function body
+    println!("Doing stuff with list of length: {}", list.len());
+}
+
+pub struct ValueOption<'a, T: AllowedTypes> {
+    base: OptionBaseAttributes<'a, T>,
+}
+
+impl<T: AllowedTypes> OptionBase for ValueOption<'_, T> {
     fn parse_env(&mut self, envs: &HashMap<String, String>) {
         if let Some(env_key) = &self.base.env_key {
-            if let Some(val) = envs.get(env_key) {
-                *self.base.value = Some(val.clone());
+            if let Some(value) = envs.get(env_key) {
+                *self.base.value = Some(convert(value).unwrap());
             }
         }
     }
@@ -19,18 +51,18 @@ impl OptionBase for StringOption<'_> {
     fn parse_args(&mut self, args: &[String]) {
         if let Some(long) = &self.base.long_arg {
             let long_flag = format!("--{}", long);
-            if let Some(idx) = args.iter().position(|arg| arg == &long_flag) {
-                if let Some(val) = args.get(idx + 1) {
-                    *self.base.value = Some(val.clone());
+            if let Some(index) = args.iter().position(|arg| arg == &long_flag) {
+                if let Some(value) = args.get(index + 1) {
+                    *self.base.value = Some(convert(value).unwrap());
                 }
             }
         }
 
         if let Some(short) = self.base.short_arg {
             let short_flag = format!("-{}", short);
-            if let Some(idx) = args.iter().position(|arg| arg == &short_flag) {
-                if let Some(val) = args.get(idx + 1) {
-                    *self.base.value = Some(val.clone());
+            if let Some(index) = args.iter().position(|arg| arg == &short_flag) {
+                if let Some(value) = args.get(index + 1) {
+                    *self.base.value = Some(convert(value).unwrap());
                 }
             }
         }
@@ -46,9 +78,9 @@ impl OptionBase for StringOption<'_> {
     }
 }
 
-impl<'a> StringOption<'a> {
-    pub fn new(value: &'a mut Option<String>, description: &str) -> Self {
-        StringOption {
+impl<'a, T: AllowedTypes> ValueOption<'a, T> {
+    pub fn new(value: &'a mut Option<T>, description: &str) -> Self {
+        ValueOption {
             base: OptionBaseAttributes {
                 description: description.into(),
                 env_key: None,
@@ -82,12 +114,12 @@ impl<'a> StringOption<'a> {
         self
     }
 
-    pub fn default(mut self, value: &str) -> Self {
+    pub fn default(mut self, value: T) -> Self {
         self.base.default = Some(value.into());
         self
     }
 
-    pub fn additional_eval(mut self, eval_fkt: impl Fn(&String) -> Result<(), Error> + 'a) -> Self {
+    pub fn additional_eval(mut self, eval_fkt: impl Fn(&T) -> Result<(), Error> + 'a) -> Self {
         self.base.additional_eval = Some(Box::new(eval_fkt));
         self
     }
@@ -96,13 +128,13 @@ impl<'a> StringOption<'a> {
 #[cfg(test)]
 mod tests {
     use crate::error::Error;
-    use crate::options::{OptionBase, StringOption};
+    use crate::options::{OptionBase, ValueOption};
 
     #[test]
     fn parse_env_existing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
+            let mut opt = ValueOption::new(&mut value, "test").env("TEST_ENV");
             let mut env = std::collections::HashMap::new();
             env.insert("TEST_ENV".to_string(), "test_value".to_string());
             opt.parse_env(&env);
@@ -114,7 +146,7 @@ mod tests {
     fn parse_env_missing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").env("TEST_ENV");
+            let mut opt = ValueOption::new(&mut value, "test").env("TEST_ENV");
             let env = std::collections::HashMap::new();
             opt.parse_env(&env);
         }
@@ -125,7 +157,7 @@ mod tests {
     fn parse_args_long_existing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").long_arg("test");
+            let mut opt = ValueOption::new(&mut value, "test").long_arg("test");
             opt.parse_args(&["--test".to_string(), "test_value".to_string()]);
         }
         assert_eq!(value, Some("test_value".to_string()));
@@ -135,7 +167,7 @@ mod tests {
     fn parse_args_long_missing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").long_arg("test");
+            let mut opt = ValueOption::new(&mut value, "test").long_arg("test");
             opt.parse_args(&["--not_test".to_string(), "test_value".to_string()]);
         }
         assert_eq!(value, None);
@@ -145,7 +177,7 @@ mod tests {
     fn parse_args_short_existing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").short_arg('t');
+            let mut opt = ValueOption::new(&mut value, "test").short_arg('t');
             opt.parse_args(&["-t".to_string(), "test_value".to_string()]);
         }
         assert_eq!(value, Some("test_value".to_string()));
@@ -155,7 +187,7 @@ mod tests {
     fn parse_args_short_missing() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").short_arg('t');
+            let mut opt = ValueOption::new(&mut value, "test").short_arg('t');
             opt.parse_args(&["-n".to_string(), "test_value".to_string()]);
         }
         assert_eq!(value, None);
@@ -164,7 +196,7 @@ mod tests {
     #[test]
     fn parse_setters_unused() {
         let mut value = None::<String>;
-        let opt = StringOption::new(&mut value, "my description");
+        let opt = ValueOption::new(&mut value, "my description");
 
         assert_eq!(opt.base.description, "my description");
         assert!(opt.base.additional_eval.is_none());
@@ -184,12 +216,12 @@ mod tests {
             Ok(())
         };
 
-        let opt = StringOption::new(&mut value, "my description")
+        let opt = ValueOption::new(&mut value, "my description")
             .env("TEST_ENV")
             .long_arg("test")
             .short_arg('t')
             .required()
-            .default("default_value")
+            .default("default_value".to_string())
             .additional_eval(eval);
 
         assert_eq!(opt.base.description, "my description");
@@ -212,7 +244,7 @@ mod tests {
     fn eval_not_set() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test").env("key");
+            let mut opt = ValueOption::new(&mut value, "test").env("key");
             assert!(opt.eval().is_ok());
         }
         assert_eq!(value, None);
@@ -222,7 +254,7 @@ mod tests {
     fn eval_set() {
         let mut value = Some("test_value".to_string());
         {
-            let mut opt = StringOption::new(&mut value, "test").env("key");
+            let mut opt = ValueOption::new(&mut value, "test").env("key");
             assert!(opt.eval().is_ok());
         }
         assert_eq!(value, Some("test_value".to_string()));
@@ -232,8 +264,8 @@ mod tests {
     fn eval_use_default() {
         let mut value = None::<String>;
         {
-            let mut opt = StringOption::new(&mut value, "test")
-                .default("default_value")
+            let mut opt = ValueOption::new(&mut value, "test")
+                .default("default_value".to_string())
                 .env("key");
             assert!(opt.eval().is_ok());
         }
@@ -243,14 +275,14 @@ mod tests {
     #[test]
     fn eval_required_set() {
         let mut value = Some("test_value".to_string());
-        let mut opt = StringOption::new(&mut value, "test").required().env("key");
+        let mut opt = ValueOption::new(&mut value, "test").required().env("key");
         assert!(opt.eval().is_ok());
     }
 
     #[test]
     fn eval_required_not_set_and_formatted_error() {
         let mut value = None::<String>;
-        let mut opt = StringOption::new(&mut value, "test").required();
+        let mut opt = ValueOption::new(&mut value, "test").required();
         assert!(opt.eval().is_err());
 
         opt = opt.env("TEST_ENV");
@@ -267,7 +299,7 @@ mod tests {
             assert_eq!(s, "test_value");
             Ok(())
         };
-        let mut opt = StringOption::new(&mut value, "test")
+        let mut opt = ValueOption::new(&mut value, "test")
             .additional_eval(eval)
             .env("key");
         assert!(opt.eval().is_ok());
@@ -280,35 +312,35 @@ mod tests {
             assert_eq!(s, "test_value");
             Err(Error::Validation("validation failed".into()))
         };
-        let mut opt = StringOption::new(&mut value, "test").additional_eval(eval);
+        let mut opt = ValueOption::new(&mut value, "test").additional_eval(eval);
         assert!(opt.eval().is_err());
     }
 
     #[test]
     fn help_no_env_only() {
         let mut value = None::<String>;
-        let opt = StringOption::new(&mut value, "my description").env("ENV_KEY");
+        let opt = ValueOption::new(&mut value, "my description").env("ENV_KEY");
         assert_eq!(opt.help(), "ENV:ENV_KEY  - my description");
     }
 
     #[test]
     fn help_no_short_arg_only() {
         let mut value = None::<String>;
-        let opt = StringOption::new(&mut value, "my description").short_arg('i');
+        let opt = ValueOption::new(&mut value, "my description").short_arg('i');
         assert_eq!(opt.help(), "ARGS:-i - my description");
     }
 
     #[test]
     fn help_no_long_arg_only() {
         let mut value = None::<String>;
-        let opt = StringOption::new(&mut value, "my description").long_arg("input");
+        let opt = ValueOption::new(&mut value, "my description").long_arg("input");
         assert_eq!(opt.help(), "ARGS:--input - my description");
     }
 
     #[test]
     fn help_all_options() {
         let mut value = None::<String>;
-        let opt = StringOption::new(&mut value, "my description")
+        let opt = ValueOption::new(&mut value, "my description")
             .env("ENV_KEY")
             .short_arg('i')
             .long_arg("input");

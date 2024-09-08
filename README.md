@@ -13,3 +13,8 @@ Add `ropts` as a dependency in your `Cargo.toml`:
 [dependencies]
 ropts = "0.1.0"
 ```
+
+## TODO 
+* Enum
+* Number
+* Array

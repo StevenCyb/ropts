@@ -1,4 +1,4 @@
-use ropts::{compose::Compose, error::Error, options::StringOption};
+use ropts::{compose::Compose, error::Error, options::ValueOption};
 use std::env;
 
 fn main() {
@@ -7,7 +7,7 @@ fn main() {
 
     let mut name = None::<String>;
 
-    let name_option = StringOption::new(&mut name, "Your name")
+    let name_option = ValueOption::new(&mut name, "Your name")
         .required()
         .env("DEMO_NAME")
         .short_arg('n')
@@ -35,5 +35,3 @@ fn main() {
 
     println!("Hello, {}!", name.unwrap());
 }
-
-// the StringOption will change
