@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::options::utils::{convert, AllowedTypes};
 use crate::options::{OptionBase, OptionBaseAttributes};
+use std::any::TypeId;
 use std::collections::HashMap;
 
 pub struct ValueOption<'a, T: AllowedTypes> {
@@ -22,6 +23,16 @@ impl<T: AllowedTypes> OptionBase for ValueOption<'_, T> {
             if let Some(index) = args.iter().position(|arg| arg == &long_flag) {
                 if let Some(value) = args.get(index + 1) {
                     *self.base.value = Some(convert(value).unwrap());
+                    return;
+                } else if self.base.type_id == TypeId::of::<bool>() {
+                    if let Some(default) = &self.base.default {
+                        if let Some(default_bool) = default.as_any().downcast_ref::<bool>() {
+                            *self.base.value = Some(convert(&(!default_bool).to_string()).unwrap());
+                        }
+                        return;
+                    }
+                    *self.base.value = Some(convert("true").unwrap());
+                    return;
                 }
             }
         }
@@ -31,6 +42,16 @@ impl<T: AllowedTypes> OptionBase for ValueOption<'_, T> {
             if let Some(index) = args.iter().position(|arg| arg == &short_flag) {
                 if let Some(value) = args.get(index + 1) {
                     *self.base.value = Some(convert(value).unwrap());
+                    return;
+                } else if self.base.type_id == TypeId::of::<bool>() {
+                    if let Some(default) = &self.base.default {
+                        if let Some(default_bool) = default.as_any().downcast_ref::<bool>() {
+                            *self.base.value = Some(convert(&(!default_bool).to_string()).unwrap());
+                        }
+                        return;
+                    }
+                    *self.base.value = Some(convert("true").unwrap());
+                    return;
                 }
             }
         }
@@ -46,7 +67,10 @@ impl<T: AllowedTypes> OptionBase for ValueOption<'_, T> {
     }
 }
 
-impl<'a, T: AllowedTypes> ValueOption<'a, T> {
+impl<'a, T> ValueOption<'a, T>
+where
+    T: AllowedTypes + 'static,
+{
     pub fn new(value: &'a mut Option<T>, description: &str) -> Self {
         ValueOption {
             base: OptionBaseAttributes {
@@ -58,6 +82,7 @@ impl<'a, T: AllowedTypes> ValueOption<'a, T> {
                 default: None,
                 value,
                 additional_eval: None,
+                type_id: TypeId::of::<T>(),
             },
         }
     }

@@ -1,4 +1,4 @@
-use ropts::{compose::Compose, error::Error, options::ValueOption};
+use ropts::{compose::Compose, error::Error, options::ValueOption, options::ValuesOption};
 use std::env;
 
 fn main() {
@@ -6,6 +6,8 @@ fn main() {
     let envs: Vec<(String, String)> = env::vars().collect();
 
     let mut name = None::<String>;
+    let mut employed: Option<bool> = Option::<bool>::None;
+    let mut skills: Option<Vec<String>> = None;
 
     let name_option = ValueOption::new(&mut name, "Your name")
         .required()
@@ -20,12 +22,23 @@ fn main() {
             }
             Ok(())
         });
+    let employed_option = ValueOption::new(&mut employed, "Are you employed?")
+        .env("DEMO_EMPLOYED")
+        .short_arg('e')
+        .long_arg("employed")
+        .default(true);
+    let skills_option = ValuesOption::new(&mut skills, "Your skills")
+        .env("DEMO_SKILLS")
+        .short_arg('s')
+        .long_arg("skills");
 
     let result = Compose::new()
         .args(args.iter().skip(1).cloned())
         .envs(envs.into_iter())
         .help(|s| println!("{}", s))
         .add(name_option)
+        .add(employed_option)
+        .add(skills_option)
         .parse();
 
     if let Err(e) = result {
@@ -34,4 +47,6 @@ fn main() {
     }
 
     println!("Hello, {}!", name.unwrap());
+    println!("Are you employed? {}", employed.unwrap());
+    // println!("Your skills are: {:?}", skills.unwrap());
 }

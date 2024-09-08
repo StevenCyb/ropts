@@ -1,14 +1,15 @@
 use std::collections::HashMap;
-use std::fmt;
+use std::fmt::Debug;
 pub mod utils;
 pub mod value_option;
 pub mod values_option;
 use crate::error::Error;
 pub use value_option::ValueOption;
+pub use values_option::ValuesOption;
 
 pub struct OptionBaseAttributes<'a, T>
 where
-    T: fmt::Display + Clone,
+    T: Debug + Clone,
 {
     description: String,
     env_key: Option<String>,
@@ -18,6 +19,7 @@ where
     default: Option<T>,
     value: &'a mut Option<T>,
     additional_eval: Option<Box<dyn Fn(&T) -> Result<(), Error> + 'a>>,
+    type_id: std::any::TypeId,
 }
 
 pub trait OptionBase {
@@ -29,7 +31,7 @@ pub trait OptionBase {
 
 impl<'a, T> OptionBaseAttributes<'a, T>
 where
-    T: fmt::Display + Clone,
+    T: Debug + Clone,
 {
     fn identifier(&self) -> String {
         let mut identifier = "{".to_string();
@@ -52,7 +54,7 @@ where
 
 impl<'a, T> OptionBase for OptionBaseAttributes<'a, T>
 where
-    T: fmt::Display + Clone,
+    T: Debug + Clone,
 {
     fn parse_env(&mut self, _: &HashMap<String, String>) {
         panic!("Not implemented, needs to be handled by the option type");
@@ -109,9 +111,9 @@ where
         }
 
         if self.required {
-            help.push_str("  Required\n");
+            help.push_str("  Required");
         } else if let Some(default) = &self.default {
-            help.push_str(&format!("  Default: {}\n", default));
+            help.push_str(&format!("  Default: {:?}\n", default));
         }
 
         help.push_str(&format!(" - {}", self.description));
@@ -136,6 +138,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.identifier(), "{ENV_KEY}");
     }
@@ -152,6 +155,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.identifier(), "{-i}");
     }
@@ -168,6 +172,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.identifier(), "{--long_arg}");
     }
@@ -184,6 +189,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.identifier(), "{ENV_KEY, -i, --long_arg}");
     }
@@ -200,6 +206,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.help(), "ENV:ENV_KEY  - my description");
     }
@@ -216,6 +223,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.help(), "ARGS:-i - my description");
     }
@@ -232,6 +240,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(opt.help(), "ARGS:--long_arg - my description");
     }
@@ -248,6 +257,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert_eq!(
             opt.help(),
@@ -267,6 +277,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert!(opt.eval().is_err());
     }
@@ -283,6 +294,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: None,
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert!(opt.eval().is_err());
     }
@@ -300,6 +312,7 @@ mod option_base_tests {
                 default: Some("default".to_string()),
                 value: &mut value,
                 additional_eval: None,
+                type_id: std::any::TypeId::of::<String>(),
             };
             assert!(opt.eval().is_ok());
         }
@@ -318,6 +331,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: Some(Box::new(|_| Ok(()))),
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert!(opt.eval().is_ok());
     }
@@ -334,6 +348,7 @@ mod option_base_tests {
             default: None,
             value: &mut value,
             additional_eval: Some(Box::new(|_| Err(Error::Validation("fail".into())))),
+            type_id: std::any::TypeId::of::<String>(),
         };
         assert!(opt.eval().is_err());
     }
