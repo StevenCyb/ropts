@@ -1,13 +1,6 @@
-# ROpts
-**NOTE:** *I wrote this library for learning purposes. It may not be completely thought out and error free*. ***Use at Your Own Risk.***
-
-ROpts is a simple and intuitive option parsing library for Rust, designed to handle both command line arguments and environment variables. This library aims to make it easy to integrate option parsing into your Rust projects.
-
-## Example
-```rust
 // Import the necessary modules
-use std::env;
 use ropts::{compose::Compose, error::Error, options::ValueOption, options::ValuesOption};
+use std::env;
 
 fn main() {
     // Collect the command line arguments and environment variables
@@ -83,13 +76,3 @@ fn main() {
         println!("You have no skills");
     }
 }
-```
-
-## Installation
-
-Add `ropts` as a dependency in your `Cargo.toml`:
-
-```toml
-[dependencies]
-ropts = "0.0.1"
-```
