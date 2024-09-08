@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
+pub mod utils;
 pub mod value_option;
 pub mod values_option;
 use crate::error::Error;
 pub use value_option::ValueOption;
-pub use value_option::ValuesOption;
 
 pub struct OptionBaseAttributes<'a, T>
 where
