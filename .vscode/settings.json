@@ -1,6 +1,8 @@
 {
   "cSpell.words": [
+    "Clippy",
     "peekable",
-    "ropts"
+    "ropts",
+    "Rustfmt"
   ]
 }

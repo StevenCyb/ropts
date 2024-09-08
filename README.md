@@ -1,6 +1,13 @@
 # ROpts
 **NOTE:** *I wrote this library for learning purposes. It may not be completely thought out and error free*. ***Use at Your Own Risk.***
 
+[![Crates.io](https://img.shields.io/crates/v/ropts.svg)](https://crates.io/crates/ropts)
+![CC0 licensed](https://img.shields.io/github/license/StevenCyb/ropts)
+[![Tests](https://github.com/StevenCyb/ropts/actions/workflows/tests.yml/badge.svg)](https://github.com/StevenCyb/ropts/actions/workflows/tests.yml)
+[![Clippy](https://github.com/StevenCyb/ropts/actions/workflows/lint.yml/badge.svg)](https://github.com/StevenCyb/ropts/actions/workflows/lint.yml)
+[![Rustfmt](https://github.com/StevenCyb/ropts/actions/workflows/rustfmt.yml/badge.svg)](https://github.com/StevenCyb/ropts/actions/workflows/rustfmt.yml)
+[![Release](https://github.com/StevenCyb/ropts/actions/workflows/release.yml/badge.svg)](https://github.com/StevenCyb/ropts/actions/workflows/release.yml)
+
 ROpts is a simple and intuitive option parsing library for Rust, designed to handle both command line arguments and environment variables. This library aims to make it easy to integrate option parsing into your Rust projects.
 
 ## Example
